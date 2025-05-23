@@ -49,3 +49,5 @@ Be sure .env is in .gitignore.
  Export summaries as PDF.
 
  Improve styling.
+
+ # Additionally there is a standalone script download-transcript.py that can be used directly to download the transcript

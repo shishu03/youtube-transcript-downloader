@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube Transcript Downloader</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            background: #fff;
+            max-width: 600px;
+            margin: 40px auto;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+            padding: 32px 24px 24px 24px;
+        }
+        h1 {
+            color: #f76b1c;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            margin-right: 8px;
+        }
+        .add-btn {
+            background: #f76b1c;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .add-btn:hover {
+            background: #ff9a44;
+        }
+        .error {
+            color: #d8000c;
+            background: #ffd2d2;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 16px;
+        }
+        .submit-btn {
+            background: #f76b1c;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 0;
+            width: 100%;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: background 0.2s;
+        }
+        .submit-btn:hover {
+            background: #ff9a44;
+        }
+        .downloads {
+            margin-top: 32px;
+        }
+        .downloads h2 {
+            color: #f76b1c;
+        }
+        .downloads ul {
+            list-style: none;
+            padding: 0;
+        }
+        .downloads li {
+            margin-bottom: 8px;
+        }
+        .downloads a {
+            color: #1c6ef7;
+            text-decoration: none;
+        }
+        .downloads a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube Transcript Downloader</h1>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        <form id="urlForm" method="POST">
+            <div id="inputs">
+                <div class="input-group">
+                    <input type="text" name="urls" placeholder="Enter YouTube playlist or video URLs" required>
+                    <button type="button" class="add-btn" onclick="addInput()">+</button>
+                </div>
+            </div>
+            <input type="submit" class="submit-btn" value="Get Transcripts">
+        </form>
+        <div class="downloads">
+        {% if files %}
+            <h2>Download Files</h2>
+            <ul>
+            {% for file in files %}
+                <li><a href="/download/{{ file.split('/')[-1] }}">{{ file.split('/')[-1] }}</a></li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+        </div>
+    </div>
+    <script>
+        function addInput() {
+            const inputsDiv = document.getElementById('inputs');
+            const group = document.createElement('div');
+            group.className = 'input-group';
+            group.innerHTML = `<input type="text" name="urls" placeholder="Enter YouTube playlist or video URLs" required>
+                <button type="button" class="add-btn" onclick="removeInput(this)">-</button>`;
+            inputsDiv.appendChild(group);
+        }
+        function removeInput(btn) {
+            btn.parentElement.remove();
+        }
+        document.getElementById('urlForm').addEventListener('submit', function(e) {
+            const inputs = document.querySelectorAll('input[name="urls"]');
+            let valid = true;
+            let errorMsg = '';
+            inputs.forEach(input => {
+                const val = input.value.trim();
+                if (val === '') return;
+                // Only allow comma or space as delimiters
+                if (/;|\n/.test(val)) {
+                    valid = false;
+                    errorMsg = 'Only comma or space is allowed as a delimiter between video URLs.';
+                }
+            });
+            if (!valid) {
+                e.preventDefault();
+                if (!document.querySelector('.error')) {
+                    const errDiv = document.createElement('div');
+                    errDiv.className = 'error';
+                    errDiv.innerText = errorMsg;
+                    document.querySelector('.container').insertBefore(errDiv, document.getElementById('urlForm'));
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+[Music] foreign [Music] hi everybody and welcome 
+to lecture six of the digital vsi design course at  
+Barry lawn University I'm Dr Adam tieman and today 
+we'll start moving to the physical domain of the  
+vlsi design process so what's next we've basically 
+finished the front end of the design process and  
+we'll now start the back end of the design so 
+the front end was this part over here where  
+we basically just defined all the logic and how 
+we're going to build our chip and how it's going  
+to fit together and now we'll move to this part 
+which we often call the back end the reason it  
+would be called the back end is because it's more 
+associated with making the metal layers I guess or  
+the connections between the different cells which 
+is done at the back end of the line in the design  
+process versus beforehand we defined our logic 
+which is associated with the transistors which  
+are made at the front end of the line okay so 
+to start we'll move between tools with a logical  
+approach to ones with a physical approach and then 
+we'll make a physical foundation for our design  
+so the first thing we do is we'll drop a floor 
+plan this will include making what we call big  
+decisions or important pieces we'll decide where 
+the they are such as the IPS that we have the  
+different input output circuits the power grids 
+the special routes and Etc after that we can go  
+and we can place our gates when we say placement 
+we're talking about placing the whole like sea of  
+standard cells the whole set of these Lego pieces 
+that we have in a big box different end Gates and  
+end Gates and so forth and when we do that we have 
+to take into consideration two things congestion  
+and timing when we finish our placement now we 
+have put our our flip flop somewhere so now we  
+know our clocked elements are so then we can go 
+on and build a clock tree see how we distribute  
+the clock to every part of the design finally we 
+can route our Nets or do detailed route where we  
+actually go and connect all of the Nets to all 
+of the pins in the different Gates and I and IPS  
+we have to take into account the RCs our design 
+rules and of course timing noise and other things  
+finally before tape out we'll clean up things 
+we'll verify we'll make sure everything is  
+connected and that we are breaking no rules 
+so illustratively we can look at this as such  
+so our first step is we're going to move to a 
+piano place in route tool or PNR tool and that  
+will contain an initial floor plan like what size 
+our chip is how our pad ring is made these things  
+are the pad ring and for example where our core 
+area where we have our standard cell rows are  
+then we'll go on to power planning we 
+may build some rings of vdd and ground  
+for a good distribution of the power on 
+the chip and bring some Stripes of power  
+to bring power and ground very um a lot 
+better into the standard cells themselves  
+next we'll go into our placement where we're 
+actually place the standard cells in the in  
+the floor plan in the core area once we have 
+our our design placed we have to see where our  
+different flip-flops are our clocked elements 
+and then we can go out and build clock trees  
+which these things would be the buffers that we 
+added during clock tree synthesis okay now that  
+we have all of our elements basically in place we 
+can go on to what we call detailed route where we  
+actually go and connect Nets to every single 
+part and finally we can prepare the tape out  
+we can add the filler cells we can do all kinds of 
+other things do checks and so forth and be ready  
+to go and what we'll get in the end is something 
+that looks similar to this uh picture over here
+so um looking at that from a higher level I guess 
+perspective we can look at what we need for moving  
+to from The Logical to the physical design we 
+have to Define our design that's usually a DOT  
+via verilog file we have some sort of a very 
+log net list that is came out of our synthesis  
+we also have our SDC constraints basically 
+the same SDC constraints there may be several  
+modifications but they're basically the same SDC 
+constraints as we had during synthesis which tell  
+our tools what our optimization goals are we 
+have to Define our operating conditions and  
+operating modes that's mmmc and we learned all 
+about that okay and we now are going into the  
+physical world so we have to have Technologies in 
+libraries such as left files okay finally we take  
+our whole set of inputs and we Define a floor plan 
+or the area that we want to put our stuff into and  
+what it's going to basically look like and now we 
+can go into What's called the physical design flow  
+once we finish the physical design flow we'll 
+get a detailed layout exported as a gds2 file
+so during synthesis our world view was a 
+bit idealistic we didn't care about power  
+supplies we just knew that there was some sort 
+of vdd in ground or one and zero but we didn't  
+really care about where the power was and how 
+it gets everywhere and you can see here on the  
+side there's a more complex chip that there are 
+different parts of the chip with different powered  
+domains and and so forth maybe even the power is 
+turned off in one of them so this is a much more  
+complex than than we did up till now we didn't 
+care about physical connections or entities we  
+didn't care about clock non-idealities we always 
+put that Delta skew of zero and that Delta Jitter  
+and so forth is zero right therefore in order to 
+start physical implementation what we have to do  
+is we have to Define our Global Nets that say what 
+vdd is how it actually connects to each one of the  
+the cells and so forth each one of these parts 
+we'll discuss later on okay we have to provide  
+technology rules and sell abstracts so we have to 
+tell it what the DRC rules are and what what the  
+left files that include like the size of our 
+cells where the actual pins are and so forth  
+we have to provide physical cells these 
+things were unnecessary when we were doing  
+logic functionality such as filler cells that just 
+filled up the empty area of the floor plan or Thai  
+cells that tie gates to one or zero constants and 
+so forth we have to Define hold constraints in all  
+operating modes and conditions this we saw we do 
+with MMC but we could have used MMC already during  
+synthesis but hold was very easy to meet we had 
+an ideal clock we didn't really check it we only  
+checked setup now we have to do hold as well 
+and we have all kinds of things like low power  
+definitions such as voltage domains power Gates 
+body Taps Etc this is a bit outside the context of  
+this course but it is something that we have to do 
+and we move to the physical domain foreign [Music]

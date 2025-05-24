@@ -9,6 +9,7 @@ import tempfile
 import time
 from dotenv import load_dotenv
 import traceback
+from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
 
 # Load environment variables
 load_dotenv()
@@ -184,11 +185,11 @@ def save_transcripts(video_urls):
                 f.write(wrapped)
             files.append(filename)
             
-        except YouTubeTranscriptApi.NoTranscriptFound:
+        except NoTranscriptFound:
             errors.append(f"No subtitles/transcript available for {video_info}")
-        except YouTubeTranscriptApi.TranscriptsDisabled:
+        except TranscriptsDisabled:
             errors.append(f"Subtitles are disabled for {video_info}")
-        except YouTubeTranscriptApi.VideoUnavailable:
+        except VideoUnavailable:
             errors.append(f"Video {video_info} is unavailable. It might be private or deleted.")
         except Exception as e:
             errors.append(f"Failed to process {video_info}: {str(e)}")

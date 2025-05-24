@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, send_file
 from youtube_transcript_api import YouTubeTranscriptApi
 from pytube import Playlist, YouTube
 import os
@@ -8,7 +8,6 @@ import textwrap
 import tempfile
 import time
 from dotenv import load_dotenv
-import traceback
 
 # Load environment variables
 load_dotenv()
@@ -49,12 +48,6 @@ def before_request():
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def internal_error(e):
-    print('--- Internal Server Error ---')
-    print(traceback.format_exc())
-    return render_template('500.html', error=str(e)), 500
 
 def is_playlist(url):
     return 'playlist' in url
@@ -217,12 +210,10 @@ def download(filename):
         transcript_dir = 'transcripts'
         
     transcript_path = os.path.join(transcript_dir, filename)
-    print(f"[DEBUG] Downloading from: {transcript_path}")
     
     if os.path.exists(transcript_path):
         return send_file(transcript_path, as_attachment=True)
     else:
-        print(f"[ERROR] File not found: {transcript_path}")
         return "File not found", 404
 
 if __name__ == "__main__":

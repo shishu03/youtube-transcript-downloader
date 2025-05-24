@@ -5,6 +5,8 @@ import os
 import re
 import requests
 import textwrap
+import tempfile
+import time
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -12,6 +14,35 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['DEBUG'] = os.environ.get('FLASK_ENV', 'development') == 'development'
+
+# Configure cleanup of old files
+def cleanup_old_files():
+    if os.environ.get('FLASK_ENV') == 'production':
+        transcript_dir = os.path.join(tempfile.gettempdir(), 'transcripts')
+        if os.path.exists(transcript_dir):
+            for file in os.listdir(transcript_dir):
+                file_path = os.path.join(transcript_dir, file)
+                # Remove files older than 1 hour
+                if os.path.isfile(file_path) and time.time() - os.path.getmtime(file_path) > 3600:
+                    try:
+                        os.remove(file_path)
+                        print(f"Cleaned up old file: {file}")
+                    except Exception as e:
+                        print(f"Error cleaning up {file}: {e}")
+
+# Configure cleanup
+last_cleanup_time = 0
+CLEANUP_INTERVAL = 3600  # Run cleanup every hour
+
+@app.before_request
+def before_request():
+    global last_cleanup_time
+    current_time = time.time()
+    
+    # Run cleanup if it's been more than CLEANUP_INTERVAL seconds
+    if current_time - last_cleanup_time > CLEANUP_INTERVAL:
+        cleanup_old_files()
+        last_cleanup_time = current_time
 
 # Error handler for 404
 @app.errorhandler(404)
@@ -78,51 +109,112 @@ def get_video_title(vid):
     return None
 
 def save_transcripts(video_urls):
-    os.makedirs("transcripts", exist_ok=True)
+    # In production, use temp directory for transcripts
+    if os.environ.get('FLASK_ENV') == 'production':
+        transcript_dir = os.path.join(tempfile.gettempdir(), 'transcripts')
+    else:
+        transcript_dir = 'transcripts'
+    
+    os.makedirs(transcript_dir, exist_ok=True)
     files = []
+    errors = []
+    
     for url in video_urls:
         vid = extract_video_id(url)
         if not vid:
+            errors.append(f"Invalid YouTube URL or video ID: {url}")
             continue
+            
         try:
-            transcript = YouTubeTranscriptApi.get_transcript(vid)
-            # Get video title for filename and header
+            # First get the video title to provide better error messages
             title = get_video_title(vid)
+            video_info = f"'{title}' ({vid})" if title else f"video {vid}"
+              
+            # Get available transcripts
+            try:
+                transcript_list = YouTubeTranscriptApi.list_transcripts(vid)
+                
+                # Try different methods to get transcript
+                try:
+                    # Try manual subtitles first (usually better quality)
+                    print(f"Trying manual subtitles for {vid}")
+                    transcript = transcript_list.find_manually_created_transcript().fetch()
+                except Exception as e:
+                    print(f"No manual transcript for {vid}: {str(e)}")
+                    try:
+                        # Try English auto-generated subtitles
+                        print(f"Trying auto-generated English subtitles for {vid}")
+                        transcript = transcript_list.find_generated_transcript(['en']).fetch()
+                    except Exception as e:
+                        print(f"No English auto-generated transcript for {vid}: {str(e)}")
+                        # Try any available transcript
+                        print(f"Trying any available transcript for {vid}")
+                        available_transcripts = transcript_list.get_transcript_list()
+                        if available_transcripts:
+                            transcript = available_transcripts[0].fetch()
+                        else:
+                            raise Exception("No transcripts available")
+            except Exception as e:
+                # Final fallback: try direct transcript retrieval
+                print(f"Trying direct transcript retrieval for {vid}")
+                transcript = YouTubeTranscriptApi.get_transcript(vid)
+            
             if title:
                 safe_title = re.sub(r'[^\w\- ]', '', title).strip().replace(' ', '_')
                 filename = f"{safe_title}.txt"
             else:
                 filename = f"{vid}.txt"
                 title = vid
-            path = f"transcripts/{filename}"
+                
+            path = os.path.join(transcript_dir, filename)
             # Combine transcript text, remove timestamps/metadata
             text = ' '.join([line['text'] for line in transcript if 'text' in line])
             # Wrap text to 180 characters per line (about 30-40 words)
             wrapped = textwrap.fill(text, width=180)
+            
             with open(path, "w", encoding="utf-8") as f:
                 f.write(f"{title}\n{'='*len(title)}\n\n")
                 f.write(wrapped)
             files.append(filename)
+            
+        except YouTubeTranscriptApi.NoTranscriptFound:
+            errors.append(f"No subtitles/transcript available for {video_info}")
+        except YouTubeTranscriptApi.TranscriptsDisabled:
+            errors.append(f"Subtitles are disabled for {video_info}")
+        except YouTubeTranscriptApi.VideoUnavailable:
+            errors.append(f"Video {video_info} is unavailable. It might be private or deleted.")
         except Exception as e:
-            print(f"Failed to get transcript for {vid}: {e}")
-            continue
-    return files
+            errors.append(f"Failed to process {video_info}: {str(e)}")
+            
+    return files, errors
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     files = []
     error = None
+    errors = []
     if request.method == "POST":
         url_inputs = request.form.getlist("urls")
         video_urls, error = parse_input_urls(url_inputs)
         if error:
-            return render_template("index.html", files=files, error=error)
-        files = save_transcripts(video_urls)
-    return render_template("index.html", files=files, error=error)
+            return render_template("index.html", files=files, error=error, errors=errors)
+        files, errors = save_transcripts(video_urls)
+    return render_template("index.html", files=files, error=error, errors=errors)
 
 @app.route("/download/<filename>")
 def download(filename):
-    return send_file(f"transcripts/{filename}", as_attachment=True)
+    # Get the appropriate transcript directory based on environment
+    if os.environ.get('FLASK_ENV') == 'production':
+        transcript_dir = os.path.join(tempfile.gettempdir(), 'transcripts')
+    else:
+        transcript_dir = 'transcripts'
+        
+    transcript_path = os.path.join(transcript_dir, filename)
+    
+    if os.path.exists(transcript_path):
+        return send_file(transcript_path, as_attachment=True)
+    else:
+        return "File not found", 404
 
 if __name__ == "__main__":
     # Set development environment for local runs

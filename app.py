@@ -164,34 +164,17 @@ def save_transcripts(video_urls):
                         else:
                             raise Exception("No transcripts available")
             except Exception as e:
-                print(f"[YTAPI ERROR] {e}", file=sys.stderr)
-                # Fallback: try direct get_transcript
-                try:
-                    transcript = YouTubeTranscriptApi.get_transcript(vid)
-                except Exception as ytapi_final:
-                    print(f"[YTAPI FINAL ERROR] {ytapi_final}", file=sys.stderr)
-                    # Fallback: try pytube captions
-                    try:
-                        yt = YouTube(f"https://www.youtube.com/watch?v={vid}")
-                        caption = yt.captions.get_by_language_code('en')
-                        if caption:
-                            # pytube returns XML, convert to text
-                            import xml.etree.ElementTree as ET
-                            root = ET.fromstring(caption.xml_captions)
-                            text = ' '.join([el.text.strip() for el in root.iter('text') if el.text])
-                            transcript = [{'text': text}]
-                        else:
-                            raise Exception("No English captions found with pytube.")
-                    except Exception as pytube_err:
-                        print(f"[PYTUBE ERROR] {pytube_err}", file=sys.stderr)
-                        errors.append(f"Failed to get transcript for {vid}: {ytapi_final} | Pytube: {pytube_err}")
-                        continue
+                # Final fallback: try direct transcript retrieval
+                print(f"Trying direct transcript retrieval for {vid}")
+                transcript = YouTubeTranscriptApi.get_transcript(vid)
+            
             if title:
                 safe_title = re.sub(r'[^\w\- ]', '', title).strip().replace(' ', '_')
                 filename = f"{safe_title}.txt"
             else:
                 filename = f"{vid}.txt"
                 title = vid
+                
             path = os.path.join(transcript_dir, filename)
             # Combine transcript text, remove timestamps/metadata
             text = ' '.join([line['text'] for line in transcript if 'text' in line])
@@ -210,7 +193,6 @@ def save_transcripts(video_urls):
         except VideoUnavailable:
             errors.append(f"Video {video_info} is unavailable. It might be private or deleted.")
         except Exception as e:
-            print(f"[GENERAL ERROR] {e}", file=sys.stderr)
             errors.append(f"Failed to process {video_info}: {str(e)}")
             
     return files, errors

@@ -10,7 +10,6 @@ import time
 from dotenv import load_dotenv
 import traceback
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled, VideoUnavailable
-import sys
 
 # Load environment variables
 load_dotenv()
@@ -197,17 +196,8 @@ def save_transcripts(video_urls):
             
     return files, errors
 
-def test_youtube_access():
-    try:
-        resp = requests.get('https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ&format=json', timeout=10)
-        print(f"[DIAG] YouTube oEmbed status: {resp.status_code}", file=sys.stderr)
-        print(f"[DIAG] oEmbed response: {resp.text[:200]}", file=sys.stderr)
-    except Exception as e:
-        print(f"[DIAG] YouTube oEmbed request failed: {e}", file=sys.stderr)
-
 @app.route("/", methods=["GET", "POST"])
 def index():
-    test_youtube_access()
     files = []
     error = None
     errors = []

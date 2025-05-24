@@ -1,6 +1,8 @@
-youtube-transcript-api
-openai
-fpdf
-python-dotenv
-Flask
-pytube
+Flask==2.3.2
+gunicorn==20.1.0
+python-dotenv==1.0.0
+youtube-transcript-api==0.6.1
+pytube==15.0.0
+requests==2.31.0
+openai==0.27.8
+fpdf==1.7.2

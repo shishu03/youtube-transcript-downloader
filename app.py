@@ -5,8 +5,18 @@ import os
 import re
 import requests
 import textwrap
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
+app.config['DEBUG'] = os.environ.get('FLASK_ENV', 'development') == 'development'
+
+# Error handler for 404
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 def is_playlist(url):
     return 'playlist' in url
@@ -115,4 +125,7 @@ def download(filename):
     return send_file(f"transcripts/{filename}", as_attachment=True)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Set development environment for local runs
+    os.environ['FLASK_ENV'] = 'development'
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)

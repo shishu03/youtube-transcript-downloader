@@ -2,4 +2,5 @@ youtube-transcript-api
 openai
 fpdf
 python-dotenv
-
+Flask
+pytube
